@@ -15,21 +15,21 @@ jobs:
       # Paso 1: Obtener las últimas 5 contribuciones desde la API de GitHub
       - name: Get recent activity from GitHub API
         run: |
-          curl -s "https://api.github.com/users/taskmovenis/events" | jq '.[:5] | .[] | {type, repo: .repo.name, payload}' > recent_activity.json
+          curl -s "https://api.github.com/users/taskmovenis/events" | jq '.[:5] | .[] | {type, created_at, payload}' > recent_activity.json
 
       # Paso 2: Formatear y generar un archivo de Markdown con las actividades recientes
       - name: Generate recent activity markdown
         run: |
           echo "### Últimas Actividades:" > updated_activity.md  # Limpiar el archivo y agregar título
-          cat recent_activity.json | jq -r '.[] | "- \(.type) en el repositorio [\(.repo)]"' >> updated_activity.md
+          cat recent_activity.json | jq -r '.[] | "- \(.type)"' >> updated_activity.md
 
       # Paso 3: Obtener estadísticas de repositorios
       - name: Get repository statistics
         run: |
-          repos=("LinuxGuide" "LinuxCommands")  # Lista de proyectos de otro usuario o empresa
+          repos=("mi-proyecto-1" "mi-proyecto-2")  # Lista de proyectos
           for repo in "${repos[@]}"; do
-            stars=$(curl -s "https://api.github.com/repos/Theritex/$repo" | jq '.stargazers_count')
-            forks=$(curl -s "https://api.github.com/repos/Theritex/$repo" | jq '.forks_count')
+            stars=$(curl -s "https://api.github.com/repos/taskmovenis/$repo" | jq '.stargazers_count')
+            forks=$(curl -s "https://api.github.com/repos/taskmovenis/$repo" | jq '.forks_count')
             echo "### $repo" >> updated_activity.md
             echo "- Estrellas: $stars" >> updated_activity.md
             echo "- Forks: $forks" >> updated_activity.md
