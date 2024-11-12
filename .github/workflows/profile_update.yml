@@ -2,10 +2,10 @@ name: Update GitHub Profile with Recent Activity
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Ejecuta a la medianoche
-    - cron: '0 12 * * *'  # Ejecuta al mediodía
-    - cron: '0 18 * * *'  # Ejecuta por la tarde
-  workflow_dispatch:  # Permite ejecución manual
+    - cron: '0 0 * * *'
+    - cron: '0 12 * * *'
+    - cron: '0 18 * * *'
+  workflow_dispatch:
 
 jobs:
   update-profile:
@@ -14,25 +14,25 @@ jobs:
     steps:
       - name: Get recent activity from GitHub API
         run: |
-          curl -s "https://api.github.com/users/taskmovenis/events" | jq '.[:5] | .[] | {type, repo: .repo.name, created_at, payload}' > recent_activity.json
+          curl -s "https://api.github.com/users/taskmovenis/events" | jq '.[:5] | .[] | {type, repo: (.repo.name // "Sin nombre"), created_at: (.created_at // "fecha no disponible"), payload}' > recent_activity.json
 
       - name: Generate recent activity markdown
         run: |
           echo "### Últimas Actividades:" > updated_activity.md
-          cat recent_activity.json | jq -r '.[] | "- \(.type) en el repositorio [\(.repo // "Sin nombre")] a las \(.created_at // "fecha no disponible")"' >> updated_activity.md
+          cat recent_activity.json | jq -r '.[] | "- \(.type) en el repositorio [\(.repo)] a las \(.created_at)"' >> updated_activity.md
 
       - name: Get repository statistics
         run: |
-          repos=("mi-proyecto-1" "mi-proyecto-2")
+          repos=("LinuxGuide" "LinuxCommands")  # Lista de repositorios de Theritex
           for repo in "${repos[@]}"; do
-            stars=$(curl -s "https://api.github.com/repos/taskmovenis/$repo" | jq '.stargazers_count')
-            forks=$(curl -s "https://api.github.com/repos/taskmovenis/$repo" | jq '.forks_count')
+            stars=$(curl -s "https://api.github.com/repos/Theritex/$repo" | jq '.stargazers_count')
+            forks=$(curl -s "https://api.github.com/repos/Theritex/$repo" | jq '.forks_count')
             echo "### $repo" >> updated_activity.md
             echo "- Estrellas: $stars" >> updated_activity.md
             echo "- Forks: $forks" >> updated_activity.md
             echo "" >> updated_activity.md
           done
-
+          
       - name: Overwrite README.md with recent activity
         run: |
           cp updated_activity.md README.md
