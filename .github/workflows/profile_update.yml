@@ -12,21 +12,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Paso 1: Obtener las últimas 5 contribuciones desde la API de GitHub
       - name: Get recent activity from GitHub API
         run: |
           curl -s "https://api.github.com/users/taskmovenis/events" | jq '.[:5] | .[] | {type, repo: .repo.name, created_at, payload}' > recent_activity.json
 
-      # Paso 2: Formatear y generar un archivo de Markdown con las actividades recientes
       - name: Generate recent activity markdown
         run: |
-          echo "### Últimas Actividades:" > updated_activity.md  # Limpiar el archivo y agregar título
-          cat recent_activity.json | jq -r '.[] | "- \(.type) en el repositorio [\(.repo)] a las \(.created_at)"' >> updated_activity.md
+          echo "### Últimas Actividades:" > updated_activity.md
+          cat recent_activity.json | jq -r '.[] | "- \(.type) en el repositorio [\(.repo // "Sin nombre")] a las \(.created_at // "fecha no disponible")"' >> updated_activity.md
 
-      # Paso 3: Obtener estadísticas de repositorios
       - name: Get repository statistics
         run: |
-          repos=("mi-proyecto-1" "mi-proyecto-2")  # Lista de proyectos
+          repos=("mi-proyecto-1" "mi-proyecto-2")
           for repo in "${repos[@]}"; do
             stars=$(curl -s "https://api.github.com/repos/taskmovenis/$repo" | jq '.stargazers_count')
             forks=$(curl -s "https://api.github.com/repos/taskmovenis/$repo" | jq '.forks_count')
@@ -36,12 +33,10 @@ jobs:
             echo "" >> updated_activity.md
           done
 
-      # Paso 4: Reemplazar el contenido del README.md con las últimas actividades
       - name: Overwrite README.md with recent activity
         run: |
-          cp updated_activity.md README.md  # Sobrescribir el README.md
+          cp updated_activity.md README.md
 
-      # Paso 5: Hacer commit y push de los cambios al repositorio
       - name: Commit and push changes
         run: |
           git config --global user.email "160645558+taskmovenis@users.noreply.github.com"
