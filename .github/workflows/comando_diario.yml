@@ -1,0 +1,58 @@
+name: Comando Linux del día (LinuxCommands)
+
+on:
+  schedule:
+    # Todos los días a las 03:00 UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  comando-diario:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio actual
+        uses: actions/checkout@v4
+
+      - name: Clonar LinuxCommands
+        run: |
+          git clone https://github.com/Nisamov/LinuxCommands.git /tmp/LinuxCommands
+
+      - name: Seleccionar comando aleatorio (.adoc)
+        run: |
+          FILE=$(find /tmp/LinuxCommands/document_management/commands -name "*.adoc" | shuf -n 1)
+          COMMAND=$(basename "$FILE" .adoc)
+
+          # Extraer primeras líneas útiles (ignorando encabezados vacíos)
+          DESCRIPTION=$(sed -n '2,8p' "$FILE" | sed '/^$/d')
+
+          DATE=$(date +"%Y-%m-%d")
+
+          cat <<EOF > /tmp/comando_del_dia.md
+**Fecha:** $DATE  
+**Comando:** \`$COMMAND\`
+
+$DESCRIPTION
+EOF
+
+      - name: Actualizar sección del README
+        run: |
+          awk '
+          BEGIN {p=1}
+          /<!-- COMMAND_OF_THE_DAY_START -->/ {print; system("cat /tmp/comando_del_dia.md"); p=0}
+          /<!-- COMMAND_OF_THE_DAY_END -->/ {p=1}
+          p {print}
+          ' README.md > README.tmp
+
+          mv README.tmp README.md
+
+      - name: Configurar Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit y push
+        run: |
+          git add README.md
+          git commit -m "Actualizar comando Linux del día" || echo "Sin cambios"
+          git push
